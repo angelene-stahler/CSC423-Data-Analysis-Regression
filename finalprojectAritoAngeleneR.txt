@@ -1,0 +1,112 @@
+install.packages("car")
+library(car)
+# Set working directory
+setwd("c:/users/angelene/desktop")
+# Read the dataset from auto.csv
+auto = read.csv("auto.csv", header=T)
+cat("auto data frame:\n")
+print(auto)
+# Send graphics to PDF file
+pdf("finalproject.pdf")
+# Create dummy variables
+coverage_dum <- as.numeric(auto$Coverage == "Basic")
+coverage_dum2 <- as.numeric(auto$Coverage == "Extended")
+vsize_dum <- as.numeric(auto$Vehicle.Size == "Small")
+vsize_dum2 <- as.numeric(auto$Vehicle.Size == "Medsize")
+# Create new data frame
+auto_with_dum <- data.frame(claim_amount=auto$Claim.Amount,
+				    coverage_dum=coverage_dum,
+				    coverage_dum2=coverage_dum2,
+				    income=auto$Income,
+				    premium=auto$Monthly.Premium.Auto,
+				    mslc=auto$Months.Since.Last.Claim,
+				    mspi=auto$Months.Since.Policy.Inception,
+				    nooc=auto$Number.of.Open.Complaints,
+				    nop=auto$Number.of.Policies,
+				    vsize_dum=vsize_dum,
+			          vsize_dum2=vsize_dum2)
+cat("auto data with dummy variables data frame:\n")
+print(auto_with_dum)
+# Kitchen sink multiple linear regression model with scaled income
+sqrt_income <- sqrt(income)
+automodel <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mslc + mspi + nooc + nop + vsize_dum + vsize_dum2, data=auto_with_dum)
+cat("kitchen sink multiple linear regression model with scaled income:\n")
+print(summary(automodel))
+# Multiple linear regression model without nooc; scaled income
+automodel2 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mslc + mspi + nop + vsize_dum + vsize_dum2, data=auto_with_dum)
+cat("multiple linear regression model without nooc; scaled income:\n")
+print(summary(automodel2))
+# Multiple linear regression model without nooc, vsize_dum, and vsize_dum2; scaled income
+automodel3 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mslc + mspi + nop, data=auto_with_dum)
+cat("multiple linear regression model without nooc, vsize_dum, and vsize_dum2; scaled income:\n")
+print(summary(automodel3))
+# Multiple linear regression model without nooc, vsize_dum, vsize_dum2, and mslc; scaled income
+automodel4 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mspi + nop, data=auto_with_dum)
+cat("multiple linear regression model without nooc, vsize_dum, vsize_dum2, and mslc; scaled income:\n")
+print(summary(automodel4))
+# Multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, and nop; scaled income
+automodel5 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mspi, data=auto_with_dum)
+cat("multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, and nop; scaled income:\n")
+print(summary(automodel5))
+# Multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, and nop; scaled income
+sqrt_income <- sqrt(income)
+automodel6 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + sqrt_income + mspi, data=auto_with_dum)
+cat("multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, and nop; scaled income:\n")
+print(summary(automodel6))
+# Multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, nop, and income
+automodel7 <- lm(premium ~ claim_amount + coverage_dum + coverage_dum2 + mspi, data=auto_with_dum)
+cat("multiple linear regression model without nooc, vsize_dum, vsize_dum2, mslc, nop, and income:\n")
+print(summary(automodel7))
+# Create residual plots and normal plot
+r = residuals(automodel7)
+p = fitted(automodel7)
+plot(p, r, main="Residual Plot for Auto Model 7",
+	     xlab="Predicted Values",
+	     ylab="Residuals")
+plot(auto_with_dum$claim_amount, r, main="Claim Amount vs Residuals",
+						xlab="Claim Amount",
+						ylab="Residuals")
+plot(auto_with_dum$coverage_dum, r, main="Coverage_Dum vs Residuals",
+						xlab="Coverage_Dum",
+						ylab="Residuals")
+plot(auto_with_dum$coverage_dum2, r, main="Coverage_Dum2 vs Residuals",
+						 xlab="Coverage_Dum2",
+						 ylab="Residuals")
+plot(auto_with_dum$mspi, r, main="Months Since Policy Inception vs Residuals",
+				    xlab="Months Since Policy Inception",
+				    ylab="Residuals")
+qqnorm(r, main="Normal Plot for Auto Model 7")
+# Create scatterplots to visualize outliers
+plot(auto_with_dum$claim_amount, auto_with_dum$premium, main="Claim Amount vs Premium",
+									  xlab="Claim Amount",
+									  ylab="Premium")
+plot(auto_with_dum$coverage_dum, auto_with_dum$premium, main="Coverage_Dum vs Premium",
+									  xlab="Coverage_Dum",
+									  ylab="Premium")
+plot(auto_with_dum$coverage_dum2, auto_with_dum$premium, main="Coverage_Dum2 vs Premium",
+									   xlab="Coverage_Dum2",
+									   ylab="Premium")
+plot(auto_with_dum$mspi, auto_with_dum$premium, main="Months Since Policy Inception vs Premium",
+								xlab="Months Since Policy Inception",
+								ylab="Premium")
+
+# Boxplots to visualize outliers
+boxplot(auto_with_dum$claim_amount)
+boxplot(auto_with_dum$mspi)
+
+# Compute univariate statistics
+print(mean(auto_with_dum$claim_amount))
+print(mean(auto_with_dum$mspi))
+print(sd(auto_with_dum$claim_amount))
+print(sd(auto_with_dum$mspi))
+print(median(auto_with_dum$claim_amount))
+print(median(auto_with_dum$mspi))
+print(IQR(auto_with_dum$claim_amount))
+print(IQR(auto_with_dum$mspi))
+
+# Determine influence points for final model
+cat("Influence points for auto model 7 1:\n")
+print(influence.measures(automodel7))
+print(vif(automodel7))
+
+dev.off( )
